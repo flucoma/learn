@@ -1,0 +1,68 @@
+---
+title: VoiceAllocator
+blurb: Dynamic frame based voice allocation.
+tags:
+    - utility
+flair: reference
+category: Utility Objects
+---
+
+<script>
+    import Admonition from '$lib/components/Admonition.svelte';
+    import ResourceLink from '$lib/components/ResourceLink.svelte';
+</script>
+
+## Algorithm
+
+VoiceAllocator is a frame based voice allocation algorithm, which brings with it some notable distinctions from the standard voice allocator you might find in a polyphonic synthesizer. Rather than a stream of distinct events all treated in a logical order based on their place in time, the object deals with a variable number of simultaneous peak messages. As such, we need to somehow prioritise certain peaks over others, especially if `VoiceAllocator` receives lists longer than what `numVoices` is set to. In this object, you have two methods to choose from - tracks with the greatest magnitude, or tracks with the lowest frequency.
+
+The prioritisation occurs after an initial track assignment. Every frequency-magnitude peak goes through the tracking algorithms also present in and further expanded on in the [Sines object reference](/reference/sines). This tracking step allows the allocator to use a fuzzy allocation system, where a peak can change in frequency over time without being reassigned to a new voice - think [MIDI Polyphonic Expression](https://wikipedia.org/wiki/MIDI#MIDI_Polyphonic_Expression) but for the actual base pitch of each 'note'.
+
+## Outputs - Freq & Mag
+
+The final step is the actual allocation algorithm, which takes the data the tracking algorithm spits out and converts it into an output list of positionally stable voices - i.e. a peak in the second position of the list will stay in that position even if the first position frees up.
+
+The first two outlets for frequencies and magnitudes do not ever clear their contents, only rewrite them with new ones, as you may want to use the last known values for a release tail, to give one example.
+
+<Admonition type='warn'>
+    Depending on how you use the data, as VoiceAllocator does not output in-between frames, you may want to add smoothing to the frequency and/or magnitude outlets to avoid clicks.
+</Admonition>
+
+## Outputs - States
+
+We also generate an extra layer of information for each voice ourselves by observing tracks over time. There are five possible states for a voice to be in, separated into triggers and continues.
+
+### Trigger States
+
+The trigger states and the values that denote them are:
+* 1: Attack - The beginning of a new voice, typically followed by a 2.
+* 3: Release - The end of an existing voice, typically followed by a 0.
+* 4: Stolen - A non-standard beginning of a new voice when a voice is replaced within the same frame, typically followed by a 2.
+
+<Admonition type='pointer'>
+    There isn't a "right way" to implement processing of the state information in your own patch. However, as trigger states are typically sent once and followed by the relevant continue state, you could use these as triggers for an ADSR (ignoring 0s and 2s).
+</Admonition>
+
+### Continue States
+
+The continue states and the values that denote them are:
+* 0: Free - Do nothing, the voice is free (though may still be in a release state based on how you implement your resynthesis).
+* 2: Sustain - Watch out for frequency and magnitude shifts, the voice is active.
+
+<Admonition type='note'>
+    Triggers aren't always followed by continues. In some cases, a voice may be released (3: Release) in frame one, and then filled with a new voice (1: Attack) in frame two. A steal (4: Stolen) can also immediately follow any of the triggers.
+</Admonition>
+
+## Related Resources
+
+<ResourceLink
+title='SPEAR (Sinusoidal Partial Editing Analysis and Resynthesis)'
+url='https://www.klingbeil.com/spear/'
+blurb='An application for audio analysis, editing and synthesis based on manipulating a sound with many individual sinusoidal tracks.'
+/>
+
+<ResourceLink 
+title='Fast Partial Tracking Algorithm'
+url='https://github.com/jundsp/Fast-Partial-Tracking' 
+blurb='Matlab code that implements a relevant sinusoidal tracking algorithm.'
+/>
