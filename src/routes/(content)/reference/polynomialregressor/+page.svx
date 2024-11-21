@@ -1,0 +1,29 @@
+---
+title: PolynomialRegressor
+blurb: Perform regression using N parallel 1-to-1 polynomial regressors.
+tags: 
+    - utlity
+    - data
+related:
+    - DataSet
+flair: reference
+category: Analyse Data
+---
+
+The [PolynomialRegressor](/reference/polynomialregressor) is a very handy tool when it comes to fitting _data_. It is a very simple algorithm that, given a set of input-output pairs - _x_ to _y_, for example - will find the line of best fit for that _data_.
+
+To begin using [PolynomialRegressor](/reference/polynomialregressor) we first need train it using two [DataSet](/reference/dataset) objects. The first is used to specify the _input_ values, think of these as the questions that we are asking the regressor. The second [DataSet](/reference/dataset) should contain the _output_ values, or the answers that we would like to recieve.
+When these two DataSets get `fit` against each other, [PolynomialRegressor](/reference/polynomialregressor) will create a single equation that will attempt to resolve each _input_ to its corresponding _output_ to the best of its ability. With noisy _data_, one single equation that will satisfy each pairing is not possible, so the regressor will simply get as close as it can.
+Then by using `predict`  with two more Datasets (the first being _inputs_ and the second being empty), [PolynomialRegressor](/reference/polynomialregressor) will fill the second [DataSet](/reference/dataset) with _data_ corresponding to the line of best fit.
+
+When predicting, the _input_ [DataSet](/reference/dataset) does not have to be the same one that was used to `fit`. This means that it can contain new _input_ values that go out of the _data_ range used to `fit` [PolynomialRegressor](/reference/polynomialregressor), therefore predicting brand new _data_ that it has never seen before.
+
+## Changing the Degree
+The `degree` of the polynomial can be changed to create a more complex line of best fit. The `degree` is simply the highest power of x that the `fit` polynomial will have; e.g. a degree of 2 means that the polynomial will have a form: y = alpha + beta x + gamma x^2. This essentially means that the higher the `degree`, the closer the _output_ data will get to the original _data_ until it begins overfitting. The algorithm can, however, be penalised for overfitting by setting a strength value for the `tikhonov` filter.
+
+## Working in Parallel
+[PolynomialRegressor](/reference/polynomialregressor) is capable of transforming multiple columns of _data_ within a [DataSet](/reference/dataset) simultaneously. Each column will be fit independently from each other, similarily to if multiple different [PolynomialRegressor](/reference/polynomialregressor) were being used.
+
+## Some Caveats to Remember
+1. When fitting the _data_, it is important to ensure that both [DataSet](/reference/dataset) objects have the same amount of _data_ with the same identifiers to ensure that [PolynomialRegressor](/reference/polynomialregressor) can work 1-to-1.
+2. Setting the `degree` too high will cause extreme overfitting, better results will be achieved by lowering the value.
